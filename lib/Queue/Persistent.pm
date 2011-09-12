@@ -1,40 +1,69 @@
 package Queue::Persistent;
 use strict;
-use warnings;
-use File::Spec;
 use Carp ();
-use Queue::Persistent::Item;
+use Queue::Persistent::Journal '-all';
 
 sub new {
     my ($class, %args) = @_;
     my $self = bless(\%args, $class);
-    $self->BUILD(%args);
-    return $self;
-}
 
-sub BUILD {
-    my ($self, %args) = @_;
+    (defined $args{journal_filename})
+        or Carp::croak("expected 'journal_filename' parameter");
+
     $self->{_q} = [ ];
-    $self->{_size_bytes} = [ ];
+
+    if (-e $args{journal_filename}) {
+        print STDERR "replaying journal ...";
+        my $replayed_ops = 0;
+        Queue::Persistent::Journal->replay_file( 
+            $args{journal_filename},
+            sub {
+                my ($cmd, $i) = @_;
+                if ($cmd == Queue::Persistent::Journal::CMD_ADD) {
+                    $self->_enqueue($i);
+                }
+                elsif ($cmd == Queue::Persistent::Journal::CMD_REMOVE) {
+                    $self->_dequeue($i);
+                }
+                $replayed_ops++;
+            },
+        );
+        print STDERR $replayed_ops," operations\n";
+    }
+    $self->{_journal} = Queue::Persistent::Journal->new( filename => $args{journal_filename} );
+    return $self;
 }
 
 
 sub enqueue {
-    my ($self, %args) = @_;
-    (exists $args{data})
-        or Carp::croak("enqueue expects 'data' parameter");
-    my $i = Queue::Persistent::Item->new(
-        data => $args{data},
-    );
-    no warnings 'uninitialized';
-    $self->{_size_bytes} += length($args{data});
+    my ($self, $i) = @_;
+    (defined $i)
+        or Carp::croak("enqueue() expects defined parameter");
+    # TODO: check memory limit
+    $self->{_journal}->add($i);
+    $self->_enqueue($i);
+}
+
+
+sub _enqueue {
+    my ($self, $i) = @_;
     push @{$self->{_q}}, $i;
 }
 
 
 sub dequeue {
-    my ($self, %args) = @_;
-    return shift(@{$self->{_q}});
+    my ($self) = @_;
+    # TODO: check rotate journal
+    if (scalar @{$self->{_q}} > 0) {
+        $self->{_journal}->remove;
+    }
+    return $self->_dequeue;
+}
+
+sub _dequeue {
+    my ($self) = @_;
+    my $i = shift(@{$self->{_q}});
+    return $i;
 }
 
 
