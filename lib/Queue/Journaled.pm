@@ -35,6 +35,12 @@ sub new {
 }
 
 
+sub items_count {
+    my ($self) = @_;
+    return (scalar @{$self->{_q}});
+}
+
+
 sub enqueue {
     my ($self, $i) = @_;
     (defined $i)
