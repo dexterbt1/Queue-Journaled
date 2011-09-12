@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 use strict;
 use Data::Dumper;
-use Queue::Persistent;
+use Queue::Journaled;
 
-my $q = Queue::Persistent->new(
+my $q = Queue::Journaled->new(
     journal_filename => "$ENV{HOME}/tmp/q/foo.aof",
 );
 #sleep 1;

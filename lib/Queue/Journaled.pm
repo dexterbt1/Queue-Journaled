@@ -1,7 +1,7 @@
-package Queue::Persistent;
+package Queue::Journaled;
 use strict;
 use Carp ();
-use Queue::Persistent::Journal '-all';
+use Queue::Journaled::Journal '-all';
 
 sub new {
     my ($class, %args) = @_;
@@ -15,14 +15,14 @@ sub new {
     if (-e $args{journal_filename}) {
         print STDERR "replaying journal ...";
         my $replayed_ops = 0;
-        Queue::Persistent::Journal->replay_file( 
+        Queue::Journaled::Journal->replay_file( 
             $args{journal_filename},
             sub {
                 my ($cmd, $i) = @_;
-                if ($cmd == Queue::Persistent::Journal::CMD_ADD) {
+                if ($cmd == Queue::Journaled::Journal::CMD_ADD) {
                     $self->_enqueue($i);
                 }
-                elsif ($cmd == Queue::Persistent::Journal::CMD_REMOVE) {
+                elsif ($cmd == Queue::Journaled::Journal::CMD_REMOVE) {
                     $self->_dequeue($i);
                 }
                 $replayed_ops++;
@@ -30,7 +30,7 @@ sub new {
         );
         print STDERR $replayed_ops," operations\n";
     }
-    $self->{_journal} = Queue::Persistent::Journal->new( filename => $args{journal_filename} );
+    $self->{_journal} = Queue::Journaled::Journal->new( filename => $args{journal_filename} );
     return $self;
 }
 

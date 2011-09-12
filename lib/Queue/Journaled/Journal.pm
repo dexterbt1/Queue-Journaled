@@ -1,4 +1,4 @@
-package Queue::Persistent::Journal;
+package Queue::Journaled::Journal;
 use strict;
 use warnings;
 use IO::File;

@@ -4,13 +4,13 @@ use Test::Exception;
 use File::Spec;
 
 BEGIN {
-    use_ok 'Queue::Persistent';
+    use_ok 'Queue::Journaled';
 }
 
 my $journal_filename = File::Spec->catdir(File::Spec->tmpdir, $$.'.aof'),
 my $q;
 
-$q = Queue::Persistent->new( journal_filename => $journal_filename );
+$q = Queue::Journaled->new( journal_filename => $journal_filename );
 
 can_ok $q, 'enqueue', 'dequeue';
 
